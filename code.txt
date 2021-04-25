@@ -82,11 +82,11 @@ insert into public.students (id_student, surname, Name, patronymic, group_number
 	(2199, 'Шарафутдинов', 'Эмиль', 'Маратович', 1091, '2019-08-02'),
 	(1791 ,'Моцарт', 'Амодей', 'Вольфган', 2358, '2017-09-15'),
 	(6666 ,'Навальный', 'Владимир', 'Владимирович', 5986, '2018-08-09'),
-	(6715 ,'Непосредственно', 'Каха', 'Васильевич', 2040, '2019-12-23'),
-	(1451 ,'На', 'Генадий', 'Крокодилов', 5986, '2020-08-23'),
+	(6715 ,'Непосредственный', 'Каха', 'Васильевич', 2040, '2019-12-23'),
+	(1451 ,'Марков', 'Генадий', 'Крокодилов', 5986, '2020-08-23'),
 	(9200 ,'Бульба', 'Тарас', 'Гонтавич', 1091, '2020-06-22'),
 	(8489 ,'Иванов', 'Мага', 'Кавказовчи', 1092, '2019-10-01'),
-	(8535 ,'Энштейн', 'Альберт', 'Требьла', 5986, '2020-07-29'),
+	(8535 ,'Энштейн', 'Альберт', 'Муса-оглы', 5986, '2020-07-29'),
 	(6253 ,'Ульянов', 'Владлен', 'Сталинович', 2358, '2017-12-13');
 
 
@@ -190,7 +190,7 @@ insert into public.elective_type(id_type, id_elective)
 
 
 --3) Вывести всех второкурсников
-	select extract(year from receipt_date), name from students
+	select extract(year from receipt_date), surname, name, id_student from students
 	where extract (year from current_date) - extract(year from receipt_date) = 2;
 
 --4) Вывести всех студентов с фамилией на А.
@@ -250,13 +250,13 @@ insert into public.elective_type(id_type, id_elective)
 	order by count(elective_type.id_type) desc;
 
 --13) Вывести всех студентов, которые посещали занятия одного типа более 1 раза.
-	select students.surname, students.name, students.id_student, count(students.id_student), count(attendance.id_elective) from attendance
+	select students.surname,students.name, students.name, students.id_student, count(students.id_student) from attendance
 	left join students on attendance.id_student = students.id_student
 	left join elective on attendance.id_elective = elective.id
 	left join elective_type on elective.id = elective_type.id_elective
 	left join work_type on  elective_type.id_type = work_type.id
 	group by students.id_student
-	having count(students.id_student) > 1 and count(attendance.id_elective) > 1;
+	having count(students.id_student) > 1 and count(attendance.id_elective)>1;
 
 --14) Вывести топ-5 типов занятий, на которых студенты получают больше всего баллов.
 	select work_type.type, sum(score) from attendance

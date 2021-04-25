@@ -277,3 +277,65 @@ insert into public.elective_type(id_type, id_elective)
 	left join work_type on  elective_type.id_type = work_type.id
 	where work_type.type is not null and date = '2021-01-24'
 	group by students.id_student;
+--------------------------------------------------------------------------------------------------------------
+--Функции
+--1) Создать функцию, которая будет заменять номер студенческого билета на '****'
+create or replace function hide_student_id(student_id int)
+returns text
+as
+$$
+	select overlay(student_id::varchar placing '****' from 1 for 4)
+$$
+language sql;
+
+--Вызов
+select hide_student_id(id_student), surname, name from students;
+--
+
+--2) Создать функцию, которая будет из ФИО делать инициалы.
+create or replace function get_full_name(surname text, name text, patronymic text)
+returns text
+as
+$$
+	select
+	case
+	when patronymic is not null then
+		surname || ' ' || overlay(name placing '.' from 2 for char_length(name)) || overlay(patronymic placing '.' from 2 for char_length(patronymic))
+	when patronymic is null then
+		surname || ' ' || overlay(name placing '.' from 2 for char_length(name))
+	end
+	
+$$
+language sql;
+--Вызов
+select get_full_name(students.surname, students.name, students.patronymic) from students;
+--
+
+--3) Написать функцию, которая будет выводит в одну строкоу фамилию студента и его успеваемость. 
+create or replace function get_marks()
+returns setof text
+
+as
+$$
+	select 
+	(case 
+	when sum(attendance.score) between 1 and 3 then
+		students.surname || ': удовлетворительно' || sum(attendance.score) 
+		
+	when sum(attendance.score) between 3 and 5 then
+		students.surname || ': хорошо'
+		
+	when sum(attendance.score) > 5 then
+		students.surname || ': отлично' 
+	end)
+	
+	from students
+	join attendance on students.id_student = attendance.id_student
+	group by students.id_student
+	order by sum(attendance.score) desc;
+	
+$$
+language sql;
+--Вызов
+select * from get_marks();
+--

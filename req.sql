@@ -340,3 +340,57 @@ language sql;
 --Вызов
 select * from get_marks();
 --
+--------------------------------------------------------------------------------------------------------------
+--Триггеры и триггерные функции
+--1) Проверяет номер студенческого билета на четырехзначность.
+create or replace function check_student_id() returns trigger as
+$$
+	begin
+		if new.id_student < 1000 or new.id_student > 9999 then
+		raise exception 'id студента должен быть четырехзначным';
+		end if;
+		return new;
+	end;
+$$
+language plpgsql;
+
+create trigger check_student_id before insert on students
+	for each row execute function check_student_id();
+
+--2) создать тригггер, выводящий сообщение о зачислении студента
+create or replace function student_out() returns trigger as
+$$
+declare 
+res varchar;
+
+	begin
+		select into res new.surname || ' ' || overlay(new.name placing '.' from 2 for char_length(new.name)) ||
+		overlay(new.patronymic placing '.' from 2 for char_length(new.patronymic));
+		raise notice 'Добавлен студент: %', res;
+		return new;
+	end;
+$$
+language plpgsql;
+
+create trigger student_out after insert on students
+	for each row execute function student_out();
+
+--3) Создать триггер, проверяющий наличие братьев и систер в вузе (если студенты из одной семьи, то им полагаются скидки)
+create or replace function check_famaly() returns trigger
+as
+$$
+	begin
+		if (select count(*) from students where surname = new.surname and patronymic = new.patronymic) > 0
+		then raise notice 'Вохможно, у  % есть брат\\сестра', new.name;
+		end if;
+		return new;
+	end;
+$$
+language 'plpgsql';
+
+create trigger checks before insert on students
+	for each row execute procedure check_famaly();
+	
+insert into public.students (id_student, surname, Name, patronymic, group_number, receipt_date)
+	values
+	(1111, 'Азаров', 'Роман', 'Данилович', 1092, '2019-07-25');
